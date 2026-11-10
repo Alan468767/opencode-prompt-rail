@@ -1,74 +1,143 @@
 # opencode-prompt-rail
 
-An OpenCode Desktop GUI plugin that adds two small prompt-history widgets to
-the session screen:
+An [OpenCode Desktop](https://opencode.ai) GUI plugin that keeps your recent
+prompts visible while you work.
 
-- A slim vertical rail on the left edge of the chat panel. Each line is one of
-  your last 10 prompts, oldest at the top and newest at the bottom. Hover a
-  line to see the full message; click it to copy the text. The newest prompt is
-  the blue line at the bottom.
-- A floating "last prompt" bubble in the session header. Hover it to see the
-  full text of the message you sent most recently.
+It adds two small widgets to the session screen:
 
-The rail can be toggled from the command palette with **Toggle recent prompt
-rail**.
+- **Recent prompt rail** — a slim vertical rail pinned to the left edge of the
+  chat column. Each line is one of your last 10 prompts, oldest at the top and
+  newest at the bottom. Hover a line to read the full message, click it to copy
+  the text. The newest prompt is drawn as a thicker accent-colored line.
+- **Last prompt bubble** — a floating pill in the session header showing the
+  message you sent most recently. Hover it for the full text. On narrow windows
+  it collapses to a small dot.
 
-## Source
+Both widgets only read your transcript. The plugin never edits messages, never
+sends anything anywhere, and has no network access of its own.
 
-The source lives at:
+<!--
+Screenshots: drop two files into `assets/` and uncomment the block below.
 
-```text
-~/.config/opencode/plugins/prompt-rail
-```
+![Recent prompt rail](assets/rail.png)
+![Last prompt bubble](assets/bubble.png)
+-->
 
-It is a local GUI-only plugin built with the OpenCode GUI plugin SDK. The
-installed copy is a versioned package in the OpenCode plugin cache.
+## Requirements
 
-## Build
+- **OpenCode Desktop.** GUI plugins are a desktop feature; the browser web UI and
+  the terminal UI do not load them.
+- An OpenCode release that ships the `@opencode/plugin` v2 GUI API. The plugin is
+  built against `@opencode/plugin@2.2.6`.
+- The GUI plugin API is still marked **experimental** upstream, so a future
+  OpenCode release may require a plugin update.
+
+## Install
+
+### From npm
 
 ```sh
-cd ~/.config/opencode/plugins/prompt-rail
-npm install
-npm run typecheck
-npm run build
+opencode plugin add opencode-prompt-rail --global
 ```
 
-The build writes `dist/gui-experimental.cjs`.
+### From GitHub
 
-## Install / update
+```sh
+opencode plugin add github:Alan468767/opencode-prompt-rail --global
+```
 
-OpenCode Desktop loads GUI plugins from the server's `plugins` list. This plugin
-is pinned in `~/.config/opencode/opencode.json`:
+The built `dist/` bundle is committed, so installing straight from the repository
+does not require a build step.
 
-```json
+### By hand
+
+Add the package to the `plugins` array of your **global** config,
+`~/.config/opencode/opencode.json`:
+
+```jsonc
 {
-  "plugins": ["opencode-prompt-rail@0.1.5"]
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": ["opencode-prompt-rail"]
 }
 ```
 
-For a new version, bump `version` in `package.json`, build, pack, install the
-tarball into the plugin cache, then update the pinned version in
-`opencode.json`:
+A GUI plugin must be listed in the **global** `opencode.json` to appear in every
+window. Listing it only in a project config is not enough.
+
+### From a local clone
 
 ```sh
-cd ~/.config/opencode/plugins/prompt-rail
+git clone https://github.com/Alan468767/opencode-prompt-rail.git
+cd opencode-prompt-rail
+npm install
 npm run build
-npm pack
-
-SPEC="opencode-prompt-rail@0.1.5"
-CACHE="$HOME/.cache/opencode/npm/$SPEC/$(python3 -c 'import time; print(int(time.time()*1000))')"
-mkdir -p "$CACHE"
-printf '{"dependencies":{"opencode-prompt-rail":"file:%s/opencode-prompt-rail-0.1.5.tgz"}}\n' "$PWD" > "$CACHE/package.json"
-(cd "$CACHE" && npm install --no-audit --no-fund)
 ```
 
-Then change the version in `opencode.json` and reload the OpenCode window
-(**View > Reload**). The server config watcher reloads the server part; the
-window reload loads the new GUI bundle.
+Then point your global config at the directory:
 
-## Notes
+```jsonc
+{
+  "plugins": ["/absolute/path/to/opencode-prompt-rail"]
+}
+```
 
-- The GUI part is a desktop feature. The browser web UI does not load GUI
-  plugins, so the widgets appear in OpenCode Desktop only.
-- The plugin never modifies the transcript. It reads user messages through the
-  session data store and the message API.
+`opencode plugin add file:/path/to/plugin` is **not** supported by the CLI — use a
+path in `plugins`, or install the package from npm or git.
+
+## Usage
+
+| Action | Result |
+| --- | --- |
+| Hover a rail line | Show the full prompt, its index and time |
+| Click a rail line | Copy that prompt to the clipboard |
+| Hover the header bubble | Show the full text of your latest prompt |
+| Command palette → **Toggle recent prompt rail** | Show or hide the rail |
+
+The rail updates as you send new prompts. It also stays correct when you switch
+between sessions.
+
+## Configuration
+
+Set the number of prompts kept in the rail with the `limit` option (default `10`,
+allowed range `1`–`50`):
+
+```jsonc
+{
+  "plugins": [
+    { "package": "opencode-prompt-rail", "options": { "limit": 20 } }
+  ]
+}
+```
+
+## Development
+
+```sh
+npm install
+npm run typecheck
+npm run build      # writes dist/gui-experimental.cjs
+npm run dev        # rebuild on every change
+```
+
+To iterate against a running desktop app, list the clone's directory in your
+global `opencode.json` and run `npm run dev`. Every rebuild reloads the plugin's
+GUI in every window; the server part does not restart.
+
+`dist/` is committed on purpose so that git-based installs work. Always run
+`npm run build` before committing a source change — CI fails when `dist/` is out
+of date with `src/`.
+
+## Troubleshooting
+
+**Nothing appears.** GUI plugins only load in OpenCode Desktop, and only when
+listed in the global `opencode.json`. Check **Settings → Extensions → Plugins**;
+a plugin that failed to load is listed there as not loaded.
+
+**The rail shows the wrong size or position.** The rail measures the chat column
+at runtime. Resize the window once, or reopen the session, to force a re-measure.
+
+**The bubble is missing.** It only renders when the active session has at least
+one user message.
+
+## License
+
+[MIT](LICENSE)

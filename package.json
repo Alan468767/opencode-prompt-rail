@@ -1,8 +1,29 @@
 {
   "name": "opencode-prompt-rail",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "OpenCode Desktop GUI plugin: a recent-prompt rail and a latest-prompt bubble.",
   "type": "module",
+  "license": "MIT",
+  "author": "Alan468767",
+  "homepage": "https://github.com/Alan468767/opencode-prompt-rail#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alan468767/opencode-prompt-rail.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Alan468767/opencode-prompt-rail/issues"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "desktop",
+    "gui",
+    "prompt-history",
+    "solid-js"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./gui-experimental": "./dist/gui-experimental.cjs"
@@ -14,7 +35,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@opencode/plugin": "2.2.6"

@@ -18,6 +18,12 @@ type Hover = {
   below: boolean
 }
 
+function normalizeLimit(value: unknown) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return HISTORY_LIMIT
+  return Math.max(1, Math.min(50, Math.floor(parsed)))
+}
+
 function oneLine(text: string) {
   return text.replace(/\s+/g, " ").trim()
 }
@@ -30,7 +36,7 @@ function lineWidth(text: string) {
   return 12 + Math.min(6, Math.floor(oneLine(text).length / 12))
 }
 
-function usePromptHistory(session: () => MountedSession, limit: number) {
+function usePromptHistory(session: () => MountedSession, limit: () => number) {
   const [fetched, setFetched] = createSignal<SessionMessageUser[]>([])
   const [revision, setRevision] = createSignal(0)
 
@@ -49,11 +55,14 @@ function usePromptHistory(session: () => MountedSession, limit: number) {
     for (const message of live()) byID.set(message.id, message)
     return [...byID.values()]
       .sort((left, right) => left.time.created - right.time.created)
-      .slice(-limit)
+      .slice(-Math.max(1, limit()))
   })
 
   createEffect(() => {
     const current = session()
+    // Drop the previous session's rows before the new request resolves, so the
+    // rail never shows prompts that belong to another session.
+    setFetched([])
     if (!current) return
 
     const connection = current.server
@@ -72,7 +81,10 @@ function usePromptHistory(session: () => MountedSession, limit: number) {
           .reverse()
         setFetched(rows)
       })
-      .catch(() => {})
+      .catch((error) => {
+        if (controller.signal.aborted) return
+        console.warn("[opencode-prompt-rail] could not load prompt history", error)
+      })
 
     void connection.data.session.message.sync(current.id).catch(() => {})
 
@@ -92,9 +104,10 @@ function PromptHeader(props: {
   active: boolean
   compact: boolean
   visible: boolean
+  limit: number
 }) {
   const ctx = usePlugin()
-  const history = usePromptHistory(() => props.session, HISTORY_LIMIT)
+  const history = usePromptHistory(() => props.session, () => props.limit)
   const latest = createMemo(() => history().at(-1))
   const [hover, setHover] = createSignal<Hover>()
   const [anchor, setAnchor] = createSignal({ left: 12, top: 120, height: 320 })
@@ -267,6 +280,9 @@ function PromptHeader(props: {
               {(message, index) => (
                 <div
                   class="opencode-prompt-rail__line"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${ctx.t("rail.copy")}: ${oneLine(message.text)}`}
                   data-latest={index() === history().length - 1 ? "true" : undefined}
                   style={`--line-width:${lineWidth(message.text)}px`}
                   onMouseEnter={(event) =>
@@ -278,7 +294,21 @@ function PromptHeader(props: {
                     })
                   }
                   onMouseLeave={hide}
+                  onFocus={(event) =>
+                    show({
+                      message,
+                      index: index() + 1,
+                      rect: event.currentTarget.getBoundingClientRect(),
+                      below: false,
+                    })
+                  }
+                  onBlur={hide}
                   onClick={() => void ctx.system.copy(message.text)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return
+                    event.preventDefault()
+                    void ctx.system.copy(message.text)
+                  }}
                 />
               )}
             </For>
@@ -312,16 +342,19 @@ export default Plugin.define({
       "command.group": "Prompt",
       "bubble.label": "last prompt",
       "rail.label": "Recent prompts",
+      "rail.copy": "Copy prompt",
     },
     zh: {
       "command.toggle": "切换最近消息栏",
       "command.group": "提示词",
       "bubble.label": "最近消息",
       "rail.label": "最近消息",
+      "rail.copy": "复制该消息",
     },
   },
   setup(ctx) {
     const [visible, setVisible] = createSignal(true)
+    const limit = normalizeLimit(ctx.options?.limit)
 
     ctx.add(Style, css)
     ctx.add(Command, () => ({
@@ -341,6 +374,7 @@ export default Plugin.define({
           active={input.active}
           compact={input.compact}
           visible={visible()}
+          limit={limit}
         />
       ),
     })

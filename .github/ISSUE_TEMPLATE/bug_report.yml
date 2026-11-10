@@ -1,0 +1,66 @@
+name: Bug report
+description: Something looks wrong in the rail, the bubble, or the build
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not include prompt text, file contents, or API keys in a
+        report. Redact screenshots before uploading them.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a session with at least three prompts
+        2. Switch to another session
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: 0.1.7
+    validations:
+      required: true
+  - type: input
+    id: opencode-version
+    attributes:
+      label: OpenCode Desktop version
+      placeholder: from the About dialog
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15.6, Windows 11, Ubuntu 24.04
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How the plugin was installed
+      options:
+        - npm
+        - from GitHub
+        - local clone with a path in opencode.json
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Output from the plugin, with anything sensitive removed.
+      render: text
+    validations:
+      required: false

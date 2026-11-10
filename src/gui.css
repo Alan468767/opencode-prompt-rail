@@ -103,6 +103,12 @@
   background: var(--v2-text-text-base, #fafafa);
 }
 
+.opencode-prompt-rail__line:focus-visible {
+  outline: 1px solid var(--v2-text-text-base, #fafafa);
+  outline-offset: 1px;
+  border-radius: 999px;
+}
+
 .opencode-prompt-rail__line[data-latest="true"]::before {
   width: 18px;
   height: 2.5px;
