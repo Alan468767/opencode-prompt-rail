@@ -39,9 +39,26 @@ A GUI plugin has to be listed in your **global** config,
 `~/.config/opencode/opencode.json`, to appear in every window. Listing it only in
 a project config is not enough.
 
+### From npm
+
+```sh
+opencode plugin add opencode-prompt-rail
+```
+
+That installs the package and adds it to your global config. Older builds have no
+`add` subcommand; there the same install is:
+
+```sh
+opencode plugin opencode-prompt-rail --global
+```
+
+Those older builds write the deprecated `plugin` key instead of `plugins`. If the
+install succeeds but the widgets never appear, check your global config and move
+the entry under `plugins`.
+
 ### From a clone
 
-This is the most reliable install, and the only one that needs no package manager.
+If the package install fails, a clone works without any package manager:
 
 ```sh
 git clone https://github.com/Alan468767/opencode-prompt-rail.git
@@ -58,29 +75,10 @@ Then point your global config at the directory:
 
 `dist/gui-experimental.cjs` is committed, so there is no build step.
 
-### As a package
-
-```sh
-opencode plugin add github:Alan468767/opencode-prompt-rail
-```
-
-That command installs the package and adds it to your global config. Installs from
-a repository go through npm's git preparation, which fails with
-`git dep preparation failed` on some builds; use the clone above when it does.
-
-Some older builds have no `add` subcommand at all. There the same install is:
-
-```sh
-opencode plugin github:Alan468767/opencode-prompt-rail --global
-```
-
-Those builds write the deprecated `plugin` key instead of `plugins`. If the
-install succeeds but the widgets never appear, check your global config and move
-the entry under `plugins`.
-
-> The package is not on npm yet. Once it is published,
-> `opencode plugin add opencode-prompt-rail` installs a tarball and skips the git
-> preparation entirely.
+> Installing straight from the repository —
+> `opencode plugin add github:Alan468767/opencode-prompt-rail` — goes through
+> npm's git preparation, which fails with `git dep preparation failed` on some
+> builds. Use the npm package or a clone instead.
 
 `opencode plugin add file:/path/to/plugin` is **not** supported — use a path in
 `plugins` instead.
@@ -142,9 +140,9 @@ package declares its server part as `exports["./server"]` since 0.1.8. Clear the
 plugin cache (`~/.cache/opencode/packages/`) and install again.
 
 **An install from GitHub fails with "git dep preparation failed".** The CLI clones
-the repository and then prepares it with npm, which needs a working registry and a
-matching Node version. Install from a clone instead — the bundled `dist/` needs no
-build.
+the repository and then prepares it with npm. Install the npm package instead,
+`opencode plugin add opencode-prompt-rail`, or clone the repository and point
+`plugins` at the directory — the bundled `dist/` needs no build.
 
 **The rail shows the wrong size or position.** The rail measures the chat column
 at runtime. Resize the window once, or reopen the session, to force a re-measure.

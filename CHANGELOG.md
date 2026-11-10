@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.10
+
+### Changed
+
+- The README now leads with `opencode plugin add opencode-prompt-rail`. The
+  package is published, so the install no longer needs a repository clone, and the
+  earlier "not on npm yet" note is gone.
+- Installing from the repository is documented as the fallback, since npm's git
+  preparation fails on some builds.
+
 ## 0.1.9
 
 ### Changed
