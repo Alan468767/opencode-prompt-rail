@@ -1,6 +1,6 @@
 {
   "name": "opencode-prompt-rail",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "OpenCode Desktop GUI plugin: a recent-prompt rail and a latest-prompt bubble.",
   "type": "module",
   "license": "MIT",
@@ -26,6 +26,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./server": "./src/index.ts",
     "./gui-experimental": "./dist/gui-experimental.cjs"
   },
   "files": [
