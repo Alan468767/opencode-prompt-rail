@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.9
+
+### Changed
+
+- Removed the `prepack` build. `dist/` is committed and CI verifies it, and a
+  pack-time build made repository installs depend on devDependencies.
+- The README now documents the clone-and-path install first. Installing straight
+  from a repository goes through npm's git preparation, which fails with
+  `git dep preparation failed` on some OpenCode builds.
+
 ## 0.1.8
 
 ### Fixed
