@@ -16,12 +16,13 @@ It adds two small widgets to the session screen:
 Both widgets only read your transcript. The plugin never edits messages, never
 sends anything anywhere, and has no network access of its own.
 
-<!--
-Screenshots: drop two files into `assets/` and uncomment the block below.
+## What it looks like
 
-![Recent prompt rail](assets/rail.png)
-![Last prompt bubble](assets/bubble.png)
--->
+![The recent prompt rail and the last prompt bubble in a session](assets/rail.png)
+
+Hovering a rail line opens a preview card with the index, time, and full text:
+
+![A hovered rail line showing its preview card](assets/rail-hover.png)
 
 ## Requirements
 

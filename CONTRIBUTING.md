@@ -43,6 +43,19 @@ To see your changes in a running desktop app, add the clone's path to the
 - Keep module scope and `setup` light; they run in every desktop window.
 - Any user-visible string goes through `ctx.t` with both `en` and `zh` entries.
 
+## Preview images
+
+`assets/rail.png` and `assets/rail-hover.png` are generated, not captured from a
+real session. `docs/preview/index.html` reproduces the plugin's DOM and embeds
+`src/gui.css`, inside a mock desktop frame with demo prompts, so the images never
+contain anyone's data.
+
+Regenerate them after a stylesheet or markup change:
+
+```sh
+node docs/preview/build.mjs      # set CHROME=… if Chrome is not in /Applications
+```
+
 ## Reporting security issues
 
 Please do not open a public issue for a vulnerability. See

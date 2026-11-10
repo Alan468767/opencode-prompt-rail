@@ -1,0 +1,562 @@
+<!doctype html>
+<!--
+  Static preview harness for opencode-prompt-rail.
+
+  This page is NOT OpenCode. It reproduces the plugin's real DOM and embeds its
+  real stylesheet (src/gui.css, injected below) inside a mock OpenCode Desktop
+  frame, so preview images can be regenerated without exposing a real session.
+
+  Usage:
+    node docs/preview/build.mjs
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>opencode-prompt-rail preview</title>
+    <style>
+      :root {
+        /* Host-provided palette, the same names the plugin reads. */
+        --v2-border-border-base: rgba(255, 255, 255, 0.1);
+        --v2-border-border-strong: rgba(255, 255, 255, 0.2);
+        --v2-border-border-muted: rgba(255, 255, 255, 0.08);
+        --v2-background-bg-deep: #080808;
+        --v2-background-bg-layer-02: #2e2e2e;
+        --v2-background-bg-layer-03: #3a3a3a;
+        --v2-background-bg-accent: #3b5cf6;
+        --v2-text-text-base: #fafafa;
+        --v2-text-text-faint: #808080;
+
+        --window-bg: #101010;
+        --panel-bg: #1a1a1a;
+        --side-bg: #141414;
+        --hairline: rgba(255, 255, 255, 0.07);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+
+      body {
+        width: 1440px;
+        height: 900px;
+        overflow: hidden;
+        background: var(--window-bg);
+        color: var(--v2-text-text-base);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", Roboto,
+          sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ---------- sidebar ---------- */
+      .sidebar {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 260px;
+        padding: 16px 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 13px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 6px;
+        font-weight: 600;
+        font-size: 13px;
+        letter-spacing: -0.01em;
+      }
+
+      .brand-mark {
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        background: linear-gradient(140deg, #6e8bff, #3b5cf6);
+      }
+
+      .new-session {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 30px;
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+        color: #d0d0d0;
+        font-size: 12px;
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .side-label {
+        padding: 0 7px;
+        margin-top: 4px;
+        color: #5a5a5a;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .side-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        height: 26px;
+        padding: 0 7px;
+        border-radius: 7px;
+        color: #adadad;
+        font-size: 12px;
+      }
+
+      .side-item span {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      .side-item.active {
+        background: rgba(255, 255, 255, 0.07);
+        color: var(--v2-text-text-base);
+      }
+
+      .dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #3a3a3a;
+        flex: none;
+      }
+
+      .side-item.active .dot {
+        background: var(--v2-background-bg-accent);
+      }
+
+      .side-spacer {
+        flex: 1;
+      }
+
+      .side-foot {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 7px 0;
+        border-top: 1px solid var(--hairline);
+        color: #8a8a8a;
+        font-size: 11.5px;
+      }
+
+      .avatar {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #2b2b2b;
+        border: 1px solid var(--hairline);
+      }
+
+      /* ---------- chat panel ---------- */
+      .panel {
+        position: absolute;
+        inset: 8px 8px 8px 268px;
+        border: 1px solid var(--hairline);
+        border-radius: 12px;
+        background: var(--panel-bg);
+        overflow: hidden;
+      }
+
+      .session-header {
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px 0 24px;
+        border-bottom: 1px solid var(--hairline);
+      }
+
+      .crumbs {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12.5px;
+        color: #858585;
+      }
+
+      .crumbs b {
+        color: var(--v2-text-text-base);
+        font-weight: 550;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .icon-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
+        border: 1px solid var(--hairline);
+        background: rgba(255, 255, 255, 0.03);
+        display: grid;
+        place-items: center;
+        color: #969696;
+        font-size: 12px;
+      }
+
+      .scroll-view {
+        position: absolute;
+        inset: 56px 0 92px 0;
+        overflow: hidden;
+      }
+
+      .thread {
+        width: 700px;
+        margin: 0 auto;
+        padding: 26px 0 0;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .msg-user {
+        align-self: flex-end;
+        max-width: 430px;
+        padding: 9px 13px;
+        border-radius: 12px;
+        border: 1px solid var(--hairline);
+        background: rgba(255, 255, 255, 0.055);
+        color: #ececec;
+        font-size: 12.5px;
+      }
+
+      .msg-assistant {
+        display: flex;
+        gap: 10px;
+        color: #c9c9c9;
+        font-size: 12.5px;
+      }
+
+      .assistant-mark {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        border-radius: 5px;
+        background: linear-gradient(140deg, #6e8bff, #3b5cf6);
+        flex: none;
+      }
+
+      .msg-assistant p {
+        margin: 0 0 8px;
+      }
+
+      .msg-assistant code {
+        padding: 1px 4px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.08);
+        font-family: "SF Mono", ui-monospace, Menlo, monospace;
+        font-size: 11.5px;
+      }
+
+      .code {
+        margin: 6px 0 9px;
+        padding: 9px 12px;
+        border: 1px solid var(--hairline);
+        border-radius: 9px;
+        background: #131313;
+        color: #a9b5c9;
+        font-family: "SF Mono", ui-monospace, Menlo, monospace;
+        font-size: 11.5px;
+        line-height: 1.75;
+        white-space: pre;
+      }
+
+      .kw {
+        color: #8fb3ff;
+      }
+
+      .str {
+        color: #a5d6a7;
+      }
+
+      .tool-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 25px;
+        margin-bottom: 9px;
+        padding: 0 9px;
+        border: 1px solid var(--hairline);
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.02);
+        color: #999;
+        font-size: 11.5px;
+      }
+
+      .tick {
+        color: #4ade80;
+      }
+
+      /* ---------- composer ---------- */
+      .composer {
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 92px;
+        padding: 0 24px 18px;
+        display: flex;
+        align-items: flex-end;
+      }
+
+      .composer-box {
+        width: 700px;
+        height: 60px;
+        margin: 0 auto;
+        padding: 9px 11px 9px 13px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 14px;
+        background: #202020;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .composer-placeholder {
+        color: #6b6b6b;
+        font-size: 12.5px;
+      }
+
+      .composer-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .chips {
+        display: flex;
+        gap: 6px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        height: 21px;
+        padding: 0 8px;
+        border: 1px solid var(--hairline);
+        border-radius: 6px;
+        color: #8b8b8b;
+        font-size: 10.5px;
+      }
+
+      .send {
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        background: var(--v2-background-bg-accent);
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 11px;
+      }
+
+      /* ---------- src/gui.css, verbatim ---------- */
+      /*__GUI_CSS__*/
+
+      /* ---------- harness ---------- */
+      #stage {
+        position: absolute;
+        inset: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="stage">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark"></span>opencode</div>
+      <div class="new-session">+ New session</div>
+
+      <div class="side-label">Today</div>
+      <div class="side-item active"><span class="dot"></span><span>Prompt rail demo</span></div>
+      <div class="side-item"><span class="dot"></span><span>Sidebar collapse behaviour</span></div>
+      <div class="side-item"><span class="dot"></span><span>Upload queue retries</span></div>
+
+      <div class="side-label">Yesterday</div>
+      <div class="side-item"><span class="dot"></span><span>Parser benchmarks</span></div>
+      <div class="side-item"><span class="dot"></span><span>Release 0.4.0 notes</span></div>
+
+      <div class="side-spacer"></div>
+      <div class="side-foot"><span class="avatar"></span>Settings</div>
+    </aside>
+
+    <div class="panel">
+      <div class="session-header">
+        <div class="crumbs">workspace&nbsp;/&nbsp;<b>Prompt rail demo</b></div>
+        <div class="header-actions">
+          <div class="opencode-prompt-bubble">
+            <span class="opencode-prompt-bubble__label">last prompt</span>
+            <span class="opencode-prompt-bubble__text" id="bubble-text"></span>
+          </div>
+          <div class="icon-btn">···</div>
+        </div>
+      </div>
+
+      <div class="scroll-view">
+        <div class="thread">
+          <div class="msg-user" data-prompt="3"></div>
+
+          <div class="msg-assistant">
+            <div class="assistant-mark"></div>
+            <div>
+              <div class="tool-row"><span class="tick">✓</span> Read src/config.ts</div>
+              <p>
+                Yes — the parser test only fails on Node 20 because
+                <code>structuredClone</code> is not available there.
+              </p>
+              <div class="code"><span class="kw">const</span> clone = <span class="str">"structuredClone"</span> <span class="kw">in</span> globalThis
+  ? structuredClone(value)
+  : JSON.parse(JSON.stringify(value))</div>
+              <p>That keeps the test green on both runtimes.</p>
+            </div>
+          </div>
+
+          <div class="msg-user" data-prompt="9"></div>
+
+          <div class="msg-assistant">
+            <div class="assistant-mark"></div>
+            <div>
+              <p>
+                It fails inside the retry loop. <code>attempt</code> is incremented before the
+                backoff is computed, so the last attempt sleeps for a value the queue never uses.
+              </p>
+              <p>Moving the increment after the delay fixes it.</p>
+            </div>
+          </div>
+
+          <div class="msg-user" data-prompt="10"></div>
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="composer-box">
+          <div class="composer-placeholder">Ask anything, or press / for commands</div>
+          <div class="composer-foot">
+            <div class="chips">
+              <span class="chip">◈ build</span>
+              <span class="chip">⌘K commands</span>
+            </div>
+            <div class="send">↑</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The plugin's rail, rendered exactly as the plugin renders it. -->
+    <div class="opencode-prompt-rail-anchor" id="rail-anchor">
+      <div class="opencode-prompt-rail" aria-label="Recent prompts" id="rail"></div>
+    </div>
+
+    <div class="opencode-prompt-rail__card" id="card" hidden>
+      <div class="opencode-prompt-rail__meta" id="card-meta"></div>
+      <div class="opencode-prompt-rail__text" id="card-text"></div>
+    </div>
+    </div>
+
+    <script>
+      // Demo prompts. Nothing here comes from a real session.
+      const PROMPTS = [
+        { text: "Add a dark mode toggle to the settings page", time: "09:04" },
+        { text: "Why does the build fail on Node 20?", time: "09:07" },
+        { text: "Write tests for the parser", time: "09:12" },
+        { text: "Refactor the auth middleware into its own service", time: "09:18" },
+        { text: "Summarise the changelog for 0.4.0", time: "09:21" },
+        { text: "Make the sidebar collapsible", time: "09:26" },
+        { text: "Fix the flaky test in session.spec.ts", time: "09:31" },
+        { text: "Add retry logic to the upload queue", time: "09:36" },
+        { text: "Explain this stack trace", time: "09:38" },
+        { text: "Update the README with install steps", time: "09:41" },
+      ]
+
+      const params = new URLSearchParams(location.search)
+      const wanted = Number(params.get("hover") ?? -1)
+
+      // Same formula as the plugin.
+      const oneLine = (text) => text.replace(/\s+/g, " ").trim()
+      const lineWidth = (text) => 12 + Math.min(6, Math.floor(oneLine(text).length / 12))
+
+      // Same geometry the plugin measures at runtime: the rail sits just inside
+      // the chat panel's left edge, below the header and above the composer.
+      const PANEL_LEFT = 268
+      const PANEL_BOTTOM = 892
+      const HEADER_BOTTOM = 64
+      const COMPOSER_INSET = 92
+      const TOP = HEADER_BOTTOM + 8
+
+      const rail = document.getElementById("rail")
+      PROMPTS.forEach((prompt, index) => {
+        const line = document.createElement("div")
+        line.className = "opencode-prompt-rail__line"
+        line.style.setProperty("--line-width", `${lineWidth(prompt.text)}px`)
+        if (index === PROMPTS.length - 1) line.dataset.latest = "true"
+        if (index === wanted) line.classList.add("is-hovered")
+        line.title = prompt.text
+        rail.appendChild(line)
+      })
+
+      const anchor = document.getElementById("rail-anchor")
+      anchor.style.left = `${PANEL_LEFT + 4}px`
+      anchor.style.top = `${TOP}px`
+      anchor.style.height = `${Math.max(140, PANEL_BOTTOM - COMPOSER_INSET - TOP)}px`
+      anchor.style.display = "flex"
+
+      const latest = PROMPTS[PROMPTS.length - 1]
+      document.getElementById("bubble-text").textContent = oneLine(latest.text)
+
+      document.querySelectorAll(".msg-user").forEach((node) => {
+        node.textContent = PROMPTS[Number(node.dataset.prompt) - 1].text
+      })
+
+      // Open the preview card on the requested rail line, positioned the way
+      // the plugin positions it for a hovered line.
+      if (wanted >= 0) {
+        const hovered = rail.children[wanted]
+        const rect = hovered.getBoundingClientRect()
+        const card = document.getElementById("card")
+        card.style.left = `${Math.max(8, Math.min(rect.right + 10, window.innerWidth - 460))}px`
+        card.style.top = `${Math.max(8, Math.min(rect.top - 8, window.innerHeight - 240))}px`
+        document.getElementById("card-meta").textContent =
+          `#${wanted + 1} · ${PROMPTS[wanted].time}`
+        document.getElementById("card-text").textContent = PROMPTS[wanted].text
+        card.hidden = false
+      }
+
+      // Optional zoom for detail captures: ?zoom=2.5&focus=500,450
+      // Applied last, so the measurements above stay in unscaled coordinates.
+      const zoom = Number(params.get("zoom") ?? 1)
+      if (Number.isFinite(zoom) && zoom > 1) {
+        const [fx, fy] = (params.get("focus") ?? "720,450").split(",").map(Number)
+        const stage = document.getElementById("stage")
+        stage.style.transformOrigin = `${fx}px ${fy}px`
+        stage.style.transform = `translate(${720 - fx}px, ${450 - fy}px) scale(${zoom})`
+      }
+    </script>
+
+    <style>
+      /* Harness only: freeze the hover state so a static capture shows it. */
+      .opencode-prompt-rail__line.is-hovered::before {
+        width: 18px !important;
+        opacity: 1 !important;
+        background: var(--v2-text-text-base, #fafafa) !important;
+      }
+    </style>
+  </body>
+</html>
