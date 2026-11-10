@@ -1,6 +1,6 @@
 {
   "name": "opencode-prompt-rail",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "OpenCode Desktop GUI plugin: a recent-prompt rail and a latest-prompt bubble.",
   "type": "module",
   "license": "MIT",
@@ -36,8 +36,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "typecheck": "tsc --noEmit",
-    "prepack": "npm run build"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@opencode/plugin": "2.2.6"
