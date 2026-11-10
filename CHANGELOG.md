@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.8
+
+### Fixed
+
+- The package now exports its server part as `./server` as well as `.`. The plugin
+  installer only recognises `./server`, `./tui`, a `main` entry, or `oc-themes`, so
+  it rejected the package with "does not expose plugin entrypoints".
+- The README install steps no longer use `opencode plugin add <name> --global` as
+  the only path. Older builds have no `add` subcommand, and the package is not on
+  npm yet.
+
 ## 0.1.7
 
 First public release.

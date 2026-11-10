@@ -35,35 +35,29 @@ Hovering a rail line opens a preview card with the index, time, and full text:
 
 ## Install
 
-### From npm
+A GUI plugin has to be listed in your **global** config,
+`~/.config/opencode/opencode.json`, to appear in every window. Listing it only in
+a project config is not enough.
+
+### With the CLI
 
 ```sh
-opencode plugin add opencode-prompt-rail --global
+opencode plugin add github:Alan468767/opencode-prompt-rail
 ```
 
-### From GitHub
+That command installs the package and adds it to your global config. Some older
+builds have no `add` subcommand; there the same install is:
 
 ```sh
-opencode plugin add github:Alan468767/opencode-prompt-rail --global
+opencode plugin github:Alan468767/opencode-prompt-rail --global
 ```
+
+Those older builds write the deprecated `plugin` key instead of `plugins`. If the
+install succeeds but the widgets never appear, check your global config and move
+the entry under `plugins`.
 
 The built `dist/` bundle is committed, so installing straight from the repository
 does not require a build step.
-
-### By hand
-
-Add the package to the `plugins` array of your **global** config,
-`~/.config/opencode/opencode.json`:
-
-```jsonc
-{
-  "$schema": "https://opencode.ai/config.json",
-  "plugins": ["opencode-prompt-rail"]
-}
-```
-
-A GUI plugin must be listed in the **global** `opencode.json` to appear in every
-window. Listing it only in a project config is not enough.
 
 ### From a local clone
 
@@ -82,8 +76,11 @@ Then point your global config at the directory:
 }
 ```
 
-`opencode plugin add file:/path/to/plugin` is **not** supported by the CLI — use a
-path in `plugins`, or install the package from npm or git.
+`opencode plugin add file:/path/to/plugin` is **not** supported — use a path in
+`plugins`, or install the package from a package spec.
+
+> The package is not on npm yet. Once it is published,
+> `opencode plugin add opencode-prompt-rail` will work as well.
 
 ## Usage
 
@@ -132,6 +129,14 @@ of date with `src/`.
 **Nothing appears.** GUI plugins only load in OpenCode Desktop, and only when
 listed in the global `opencode.json`. Check **Settings → Extensions → Plugins**;
 a plugin that failed to load is listed there as not loaded.
+
+**The CLI said it installed, but nothing appears.** An older CLI writes the
+deprecated `plugin` key. Move that entry into `plugins`
+([see above](#with-the-cli)).
+
+**An install from GitHub fails with "does not expose plugin entrypoints".** The
+package declares its server part as `exports["./server"]` since 0.1.8. Clear the
+plugin cache (`~/.cache/opencode/packages/`) and install again.
 
 **The rail shows the wrong size or position.** The rail measures the chat column
 at runtime. Resize the window once, or reopen the session, to force a re-measure.
