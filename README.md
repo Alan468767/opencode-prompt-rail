@@ -4,8 +4,9 @@ An OpenCode Desktop GUI plugin that adds two small prompt-history widgets to
 the session screen:
 
 - A slim vertical rail on the left edge of the chat panel. Each line is one of
-  your last 10 prompts. Hover a line to see the full message; click it to copy
-  the text. The newest prompt is the blue line.
+  your last 10 prompts, oldest at the top and newest at the bottom. Hover a
+  line to see the full message; click it to copy the text. The newest prompt is
+  the blue line at the bottom.
 - A floating "last prompt" bubble in the session header. Hover it to see the
   full text of the message you sent most recently.
 

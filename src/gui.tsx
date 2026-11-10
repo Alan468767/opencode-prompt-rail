@@ -263,16 +263,16 @@ function PromptHeader(props: {
           }}
         >
           <div class="opencode-prompt-rail" aria-label={ctx.t("rail.label")}>
-            <For each={history().slice().reverse()}>
+            <For each={history()}>
               {(message, index) => (
                 <div
                   class="opencode-prompt-rail__line"
-                  data-latest={index() === 0 ? "true" : undefined}
+                  data-latest={index() === history().length - 1 ? "true" : undefined}
                   style={`--line-width:${lineWidth(message.text)}px`}
                   onMouseEnter={(event) =>
                     show({
                       message,
-                      index: history().length - index(),
+                      index: index() + 1,
                       rect: event.currentTarget.getBoundingClientRect(),
                       below: false,
                     })
