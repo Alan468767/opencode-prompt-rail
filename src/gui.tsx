@@ -1,6 +1,7 @@
 import type { SessionMessageUser } from "@opencode/client"
 import { Command, Plugin, Slot, Style, usePlugin, type MountedSession } from "@opencode/plugin/gui"
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js"
+import { Portal } from "solid-js/web"
 import css from "./gui.css?inline"
 
 const HISTORY_LIMIT = 10
@@ -26,7 +27,7 @@ function formatTime(value: number) {
 }
 
 function lineWidth(text: string) {
-  return 16 + Math.min(8, Math.floor(oneLine(text).length / 12))
+  return 12 + Math.min(6, Math.floor(oneLine(text).length / 12))
 }
 
 function usePromptHistory(session: () => MountedSession, limit: number) {
@@ -98,22 +99,66 @@ function PromptHeader(props: {
   const [hover, setHover] = createSignal<Hover>()
   const [anchor, setAnchor] = createSignal({ left: 12, top: 120, height: 320 })
 
-  let anchorEl: HTMLDivElement | undefined
+  let anchorEl: HTMLSpanElement | undefined
   let hideTimer: number | undefined
 
   const measure = () => {
     if (!anchorEl) return
     const scroll = anchorEl.closest(".scroll-view") as HTMLElement | null
     const header = anchorEl.closest(".session-header") as HTMLElement | null
-    const panel = (scroll ?? header)?.getBoundingClientRect()
-    if (!panel) return
-
+    const main = anchorEl.closest("main") as HTMLElement | null
+    const scrollRect = scroll?.getBoundingClientRect()
     const headerRect = header?.getBoundingClientRect()
-    const top = (headerRect?.bottom ?? panel.top + 56) + 8
-    const bottom = panel.bottom - 92
+    const mainRect = main?.getBoundingClientRect()
+
+    // The slot lives in the header's actions area, so its own ancestors do not
+    // reliably describe the timeline. `main` is the chat column: use its left
+    // edge plus the panel inset, and keep the vertical bounds from the panel.
+    let panelEl = anchorEl.parentElement
+    while (panelEl) {
+      const style = getComputedStyle(panelEl)
+      const rect = panelEl.getBoundingClientRect()
+      if (
+        style.overflow === "hidden" &&
+        Number.parseFloat(style.borderRadius) >= 8 &&
+        rect.width >= 480 &&
+        rect.height >= 300
+      ) {
+        break
+      }
+      panelEl = panelEl.parentElement
+    }
+    const panelRect = panelEl?.getBoundingClientRect() ?? scrollRect ?? mainRect
+    if (!panelRect) return
+
+    // The chat column is the child of the app content row that holds the
+    // header; its previous sibling is the left sidebar. This is more reliable
+    // than any single ancestor class in the desktop layout.
+    let chatLeft: number | undefined
+    let row = anchorEl.parentElement
+    while (row) {
+      const style = getComputedStyle(row)
+      if (style.display.includes("flex")) {
+        const children = Array.from(row.children) as HTMLElement[]
+        const index = children.findIndex((child) => child.contains(anchorEl!))
+        if (index > 0) {
+          const chat = children[index].getBoundingClientRect()
+          const sidebar = children[index - 1].getBoundingClientRect()
+          if (chat.width >= 600 && chat.height >= 300 && sidebar.width >= 100 && sidebar.width <= 600) {
+            chatLeft = chat.left
+            break
+          }
+        }
+      }
+      row = row.parentElement
+    }
+
+    const left = (chatLeft ?? (mainRect ?? panelRect).left) + 4
+    const top = (headerRect?.bottom ?? panelRect.top + 56) + 8
+    const bottom = panelRect.bottom - 92
     const height = Math.max(140, bottom - top)
     setAnchor({
-      left: Math.round(panel.left + 4),
+      left: Math.round(left),
       top: Math.round(top),
       height: Math.round(height),
     })
@@ -205,54 +250,57 @@ function PromptHeader(props: {
         )}
       </Show>
 
-      <div
-        ref={(element) => (anchorEl = element)}
-        class="opencode-prompt-rail-anchor"
-        style={{
-          left: `${anchor().left}px`,
-          top: `${anchor().top}px`,
-          height: `${anchor().height}px`,
-          display: props.active && props.visible && history().length > 0 ? "flex" : "none",
-        }}
-      >
-        <div class="opencode-prompt-rail" aria-label={ctx.t("rail.label")}>
-          <For each={history().slice().reverse()}>
-            {(message, index) => (
-              <div
-                class="opencode-prompt-rail__line"
-                data-latest={index() === 0 ? "true" : undefined}
-                style={`--line-width:${lineWidth(message.text)}px`}
-                onMouseEnter={(event) =>
-                  show({
-                    message,
-                    index: history().length - index(),
-                    rect: event.currentTarget.getBoundingClientRect(),
-                    below: false,
-                  })
-                }
-                onMouseLeave={hide}
-                onClick={() => void ctx.system.copy(message.text)}
-              />
-            )}
-          </For>
-        </div>
-      </div>
+      <span ref={(element) => (anchorEl = element)} style={{ display: "none" }} />
 
-      <Show when={props.active && hover()}>
-        {(current) => (
-          <div
-            class="opencode-prompt-rail__card"
-            style={cardStyle()}
-            onMouseEnter={() => show(current())}
-            onMouseLeave={hide}
-          >
-            <div class="opencode-prompt-rail__meta">
-              #{current().index} · {formatTime(current().message.time.created)}
-            </div>
-            <div class="opencode-prompt-rail__text">{current().message.text}</div>
+      <Portal mount={document.body}>
+        <div
+          class="opencode-prompt-rail-anchor"
+          style={{
+            left: `${anchor().left}px`,
+            top: `${anchor().top}px`,
+            height: `${anchor().height}px`,
+            display: props.active && props.visible && history().length > 0 ? "flex" : "none",
+          }}
+        >
+          <div class="opencode-prompt-rail" aria-label={ctx.t("rail.label")}>
+            <For each={history().slice().reverse()}>
+              {(message, index) => (
+                <div
+                  class="opencode-prompt-rail__line"
+                  data-latest={index() === 0 ? "true" : undefined}
+                  style={`--line-width:${lineWidth(message.text)}px`}
+                  onMouseEnter={(event) =>
+                    show({
+                      message,
+                      index: history().length - index(),
+                      rect: event.currentTarget.getBoundingClientRect(),
+                      below: false,
+                    })
+                  }
+                  onMouseLeave={hide}
+                  onClick={() => void ctx.system.copy(message.text)}
+                />
+              )}
+            </For>
           </div>
-        )}
-      </Show>
+        </div>
+
+        <Show when={props.active && hover()}>
+          {(current) => (
+            <div
+              class="opencode-prompt-rail__card"
+              style={cardStyle()}
+              onMouseEnter={() => show(current())}
+              onMouseLeave={hide}
+            >
+              <div class="opencode-prompt-rail__meta">
+                #{current().index} · {formatTime(current().message.time.created)}
+              </div>
+              <div class="opencode-prompt-rail__text">{current().message.text}</div>
+            </div>
+          )}
+        </Show>
+      </Portal>
     </>
   )
 }
